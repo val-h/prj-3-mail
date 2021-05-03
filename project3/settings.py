@@ -25,13 +25,24 @@ SECRET_KEY = '05$4$3aewga-ywwaondza$g!k4m779pbgvn9)euj0zp7-ae*x@4pxr+'
 # SECURITY WARNING: don't run with debug turned on in production!
 DEBUG = True
 
-ALLOWED_HOSTS = []
+# CORS config
+# more info here: https://dzone.com/articles/how-to-fix-django-cors-error
+# the network error from this (and a few other things) killed my motivation to work for weeks...
+ALLOWED_HOSTS = ['*']
+CORS_ORIGIN_ALLOW_ALL = True
+# CORS_ORIGIN_WHITELIST = (
+#     'http://127.0.0.1:8000',
+# )
 
 
 # Application definition
 
 INSTALLED_APPS = [
+    # third party
+    'corsheaders',
+    # my apps
     'mail',
+    # default
     'django.contrib.admin',
     'django.contrib.auth',
     'django.contrib.contenttypes',
@@ -41,6 +52,8 @@ INSTALLED_APPS = [
 ]
 
 MIDDLEWARE = [
+     'corsheaders.middleware.CorsMiddleware',
+
     'django.middleware.security.SecurityMiddleware',
     'django.contrib.sessions.middleware.SessionMiddleware',
     'django.middleware.common.CommonMiddleware',
