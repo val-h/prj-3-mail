@@ -30,6 +30,10 @@ document.addEventListener('DOMContentLoaded', function() {
     });
   });
 
+  // continue with the api work, tried another way with cors, didn't work
+  // only the emails/<int:email_id> works, try downgrading the django version
+  // or something similar
+
   // By default, load the inbox
   load_mailbox('inbox');
 });

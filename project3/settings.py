@@ -28,20 +28,16 @@ DEBUG = True
 # CORS config
 # more info here: https://dzone.com/articles/how-to-fix-django-cors-error
 # the network error from this (and a few other things) killed my motivation to work for weeks...
-ALLOWED_HOSTS = ['*']
-CORS_ORIGIN_ALLOW_ALL = True
-# CORS_ORIGIN_WHITELIST = (
-#     'http://127.0.0.1:8000',
-# )
+# ALLOWED_HOSTS = ['*']
+# CORS_ORIGIN_ALLOW_ALL = True
+CORS_ORIGIN_WHITELIST = (
+    'http://localhost:8000',
+)
 
 
 # Application definition
 
 INSTALLED_APPS = [
-    # third party
-    'corsheaders',
-    # my apps
-    'mail',
     # default
     'django.contrib.admin',
     'django.contrib.auth',
@@ -49,13 +45,18 @@ INSTALLED_APPS = [
     'django.contrib.sessions',
     'django.contrib.messages',
     'django.contrib.staticfiles',
+    
+    # third party
+    'corsheaders',
+    # my apps
+    'mail',
 ]
 
 MIDDLEWARE = [
-     'corsheaders.middleware.CorsMiddleware',
 
     'django.middleware.security.SecurityMiddleware',
     'django.contrib.sessions.middleware.SessionMiddleware',
+    'corsheaders.middleware.CorsMiddleware',
     'django.middleware.common.CommonMiddleware',
     'django.middleware.csrf.CsrfViewMiddleware',
     'django.contrib.auth.middleware.AuthenticationMiddleware',
