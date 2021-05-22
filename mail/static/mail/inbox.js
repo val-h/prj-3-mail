@@ -34,57 +34,8 @@ function load_mailbox(mailbox) {
 
   // Show the mailbox name
   document.querySelector('#emails-view').innerHTML = `<h3>${mailbox.charAt(0).toUpperCase() + mailbox.slice(1)}</h3>`;
-  load_mail(mailbox);
-}
 
-function send_email() {
-  // const recipients = document.querySelector('#compose-recipients').value;
-  // const subject = document.querySelector('#compose-subject').value;
-  // const body = document.querySelector('#compose-body').value;
-  // console.log(recipients);
-  // console.log(subject);
-  // console.log(body);
-  // fetch('/emails', {
-  //   method: 'POST',
-  //   body: JSON.stringify({
-  //     recipients: recipients,
-  //     subject: subject,
-  //     body: body
-  //   })
-  // })
-  // .then(response => response.json())
-  // .then(data => {
-  //   console.log(data);
-  // })
-  // .catch(e => {
-  //   console.log(e);
-  // })
-
-  fetch('/emails', {
-    method: 'POST',
-    body: JSON.stringify({
-      recipients: document.querySelector('#compose-recipients').value,
-      subject: document.querySelector('#compose-subject').value,
-      body: document.querySelector('#compose-body').value,
-    })
-  })
-    .then(response => response.json())
-    .then(result => {
-      console.log(result);
-    })
-    .catch(e => {
-      console.log(e);
-    })
-
-  // it starts to load the sent mailbox and then recieves the js file
-  // a new and loads again its contents -> setting inbox by default
-  console.log('loading sent mailbox...');
-  load_mailbox('sent');
-
-  return false;
-}
-
-function load_mail(mailbox) {
+  // Load the specific mailbox
   fetch(`/emails/${mailbox}`)
     .then(response => response.json())
     .then(emails => {
@@ -101,7 +52,7 @@ function load_mail(mailbox) {
 
         // Create the subject section
         mail_subject = document.createElement('DIV');
-        mail_subject.innerHTML = crnt_email.subject + crnt_email.id;
+        mail_subject.innerHTML = `${crnt_email.sender} - ${crnt_email.subject}`;
         mail_subject.className = 'mail-subject';
 
         // Add a date field
@@ -124,18 +75,88 @@ function load_mail(mailbox) {
     });
 }
 
+// Send email
+function send_email() {
+  fetch('/emails', {
+    method: 'POST',
+    body: JSON.stringify({
+      recipients: document.querySelector('#compose-recipients').value,
+      subject: document.querySelector('#compose-subject').value,
+      body: document.querySelector('#compose-body').value,
+    })
+  })
+    .then(response => response.json())
+    .then(result => {
+      console.log(result);
+    })
+    .catch(e => {
+      console.log(e);
+    });
+
+  // it starts to load the sent mailbox and then recieves the js file
+  // a new and loads again its contents -> setting inbox by default
+  console.log('loading sent mailbox...');
+  load_mailbox('sent');
+  console.log('sent mailbox...');
+}
+
+// Single email detailed view
 function detail_view(email) {
-  console.log(email)
+  console.log(email);
+  console.log(email.archived);
   document.querySelector('#emails-view').style.display = 'none';
   document.querySelector('#detail-view').style.display = 'block';
   document.querySelector('#compose-view').style.display = 'none';
 
+  //  Set the fields
   document.querySelector('#email-from').innerHTML = email.sender;
   document.querySelector('#email-to').innerHTML = email.recepients;
   document.querySelector('#email-subject').innerHTML = email.subject;
   document.querySelector('#email-timestamp').innerHTML = email.timestamp;
 
-  // TODO - add a reply button, put request to /emails/<int:id> for being read
+  // Buttons
+  document.querySelector('#reply').addEventListener('click', () => reply(email));
+  const archive_btn = document.querySelector('#archive');
+  // Set the button's text
+  if (email.archived === false) {
+    archive_btn.innerHTML = 'Archive';
+  } else {
+    archive_btn.innerHTML = 'Unarchive';
+  }
+  archive_btn.addEventListener('click', () => {
+    if (archive_btn.innerHTML === 'Archive') {
+      archive(email, value=true);
+      archive_btn.innerHTML = 'Unarchive';
+    } else if (archive_btn.innerHTML === 'Unarchive') {
+      archive(email, value=false);
+      archive_btn.innerHTML = 'Archive';
+    }
+  });
+
+  fetch(`/emails/${email.id}`, {
+    method: 'PUT',
+    body: JSON.stringify({
+      read: true,
+    })
+  });
 
   document.querySelector('#email-body').innerHTML = email.body;
+}
+
+// Reply button
+function reply(email) {
+
+}
+
+// Wierd Error where every previous put metho is requested again again
+
+// Archive button
+function archive(email, value=true) {
+  const options = {
+    method: 'PUT',
+    body: JSON.stringify({
+      archived: value
+    })
+  };
+  fetch(`/emails/${email.id}`, options);
 }
