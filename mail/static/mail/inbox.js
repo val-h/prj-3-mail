@@ -1,4 +1,4 @@
-document.addEventListener('DOMContentLoaded', function() {
+document.addEventListener('DOMContentLoaded', function () {
 
   // Use buttons to toggle between views
   document.querySelector('#inbox').addEventListener('click', () => load_mailbox('inbox'));
@@ -6,8 +6,8 @@ document.addEventListener('DOMContentLoaded', function() {
   document.querySelector('#archived').addEventListener('click', () => load_mailbox('archive'));
   document.querySelector('#compose').addEventListener('click', compose_email);
 
-  document.querySelector('#compose-form').onsubmit = send_email;
-  
+  document.querySelector('#compose-form').addEventListener('submit', () => send_email());
+
   // By default, load the inbox
   load_mailbox('inbox');
 });
@@ -26,7 +26,7 @@ function compose_email() {
 }
 
 function load_mailbox(mailbox) {
-  
+
   // Show the mailbox and hide other views
   document.querySelector('#emails-view').style.display = 'block';
   document.querySelector('#detail-view').style.display = 'none';
@@ -34,70 +34,94 @@ function load_mailbox(mailbox) {
 
   // Show the mailbox name
   document.querySelector('#emails-view').innerHTML = `<h3>${mailbox.charAt(0).toUpperCase() + mailbox.slice(1)}</h3>`;
-  load_mail(mailbox)
-
+  load_mail(mailbox);
 }
 
 function send_email() {
-  const recepients = document.querySelector('#compose-recepients').value;
-  const subject = document.querySelector('#compose-subject').value;
-  const body = document.querySelector('#compose-body').value;
-  console.log(recepients);
+  // const recipients = document.querySelector('#compose-recipients').value;
+  // const subject = document.querySelector('#compose-subject').value;
+  // const body = document.querySelector('#compose-body').value;
+  // console.log(recipients);
+  // console.log(subject);
+  // console.log(body);
+  // fetch('/emails', {
+  //   method: 'POST',
+  //   body: JSON.stringify({
+  //     recipients: recipients,
+  //     subject: subject,
+  //     body: body
+  //   })
+  // })
+  // .then(response => response.json())
+  // .then(data => {
+  //   console.log(data);
+  // })
+  // .catch(e => {
+  //   console.log(e);
+  // })
+
   fetch('/emails', {
     method: 'POST',
     body: JSON.stringify({
-      recepients: recepients,
-      subject: subject,
-      body: body
+      recipients: document.querySelector('#compose-recipients').value,
+      subject: document.querySelector('#compose-subject').value,
+      body: document.querySelector('#compose-body').value,
     })
   })
-  .then(response => response.json())
-  .then(result => {
-    console.log(result);
-  })
-  .catch(e => {
-    console.log(e);
-  })
+    .then(response => response.json())
+    .then(result => {
+      console.log(result);
+    })
+    .catch(e => {
+      console.log(e);
+    })
+
+  // it starts to load the sent mailbox and then recieves the js file
+  // a new and loads again its contents -> setting inbox by default
+  console.log('loading sent mailbox...');
+  load_mailbox('sent');
+
+  return false;
 }
 
 function load_mail(mailbox) {
   fetch(`/emails/${mailbox}`)
-  .then(response => response.json())
-  .then(emails => {
-    console.log(emails);
+    .then(response => response.json())
+    .then(emails => {
+      console.log(emails);
 
-    emails_view = document.querySelector('#emails-view');
-    for (i = 0; i < emails.length; i++) {
-      const crnt_email = emails[i]
-      // Create the container that will hold the email
-      mail_container = document.createElement('DIV');
-      // mail_container.innerHTML = emails[i].subject;
-      mail_container.className = 'mail';
-      mail_container.addEventListener('click', () => detail_view(crnt_email));
+      emails_view = document.querySelector('#emails-view');
+      for (i = 0; i < emails.length; i++) {
+        const crnt_email = emails[i]
+        // Create the container that will hold the email
+        mail_container = document.createElement('DIV');
+        // mail_container.innerHTML = emails[i].subject;
+        mail_container.className = 'mail';
+        mail_container.addEventListener('click', () => detail_view(crnt_email));
 
-      // Create the subject section
-      mail_subject = document.createElement('DIV');
-      mail_subject.innerHTML = crnt_email.subject + crnt_email.id;
-      mail_subject.className = 'mail-subject';
+        // Create the subject section
+        mail_subject = document.createElement('DIV');
+        mail_subject.innerHTML = crnt_email.subject + crnt_email.id;
+        mail_subject.className = 'mail-subject';
 
-      // Add a date field
-      mail_date = document.createElement('div');
-      mail_date.innerHTML = crnt_email.timestamp;
-      mail_date.className = 'mail-date';
+        // Add a date field
+        mail_date = document.createElement('div');
+        mail_date.innerHTML = crnt_email.timestamp;
+        mail_date.className = 'mail-date';
 
-      //  Structure the divs
-      mail_container.appendChild(mail_subject);
-      mail_container.appendChild(mail_date);
+        //  Structure the divs
+        mail_container.appendChild(mail_subject);
+        mail_container.appendChild(mail_date);
 
-      // Check if the email is read
-      if (crnt_email.read == true) {
-        mail_container.style.background = 'lightgray';
+        // Check if the email is read
+        if (crnt_email.read == true) {
+          mail_container.style.background = 'lightgray';
+        }
+
+        // Finally appoend the container to the email view
+        emails_view.appendChild(mail_container);
       }
-
-      // Finally appoend the container to the email view
-      emails_view.appendChild(mail_container);
-    }
-  });
+    });
 }
 
 function detail_view(email) {
