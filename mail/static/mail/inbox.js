@@ -48,7 +48,7 @@ function load_mailbox(mailbox) {
         mail_container = document.createElement('DIV');
         // mail_container.innerHTML = emails[i].subject;
         mail_container.className = 'mail';
-        mail_container.addEventListener('click', () => detail_view(crnt_email));
+        mail_container.addEventListener('click', () => detail_view(crnt_email, mailbox));
 
         // Create the subject section
         mail_subject = document.createElement('DIV');
@@ -101,44 +101,64 @@ function send_email() {
 }
 
 // Single email detailed view
-function detail_view(email) {
-  console.log(email);
-  console.log(email.archived);
+function detail_view(email, mailbox) {
+  console.log('Email', email);
   document.querySelector('#emails-view').style.display = 'none';
   document.querySelector('#detail-view').style.display = 'block';
   document.querySelector('#compose-view').style.display = 'none';
 
   //  Set the fields
   document.querySelector('#email-from').innerHTML = email.sender;
-  document.querySelector('#email-to').innerHTML = email.recepients;
+  // Returns an Array
+  document.querySelector('#email-to').innerHTML = email.recipients;
   document.querySelector('#email-subject').innerHTML = email.subject;
   document.querySelector('#email-timestamp').innerHTML = email.timestamp;
 
   // Buttons
   document.querySelector('#reply').addEventListener('click', () => reply(email));
   const archive_btn = document.querySelector('#archive');
-  // Set the button's text
-  if (email.archived === false) {
-    archive_btn.innerHTML = 'Archive';
-  } else {
-    archive_btn.innerHTML = 'Unarchive';
-  }
-  archive_btn.addEventListener('click', () => {
-    if (archive_btn.innerHTML === 'Archive') {
-      archive(email, value=true);
-      archive_btn.innerHTML = 'Unarchive';
-    } else if (archive_btn.innerHTML === 'Unarchive') {
-      archive(email, value=false);
-      archive_btn.innerHTML = 'Archive';
-    }
-  });
 
-  fetch(`/emails/${email.id}`, {
-    method: 'PUT',
-    body: JSON.stringify({
-      read: true,
-    })
-  });
+  console.log(mailbox);
+  // Check if the request is from 'sent' mailbox
+  if (mailbox !== 'sent') {
+    // Display the archive button
+    archive_btn.style.display = 'inline';
+    
+    // Set the archive button's text
+    if (email.archived === false) {
+      archive_btn.innerHTML = 'Archive';
+    } else {
+      archive_btn.innerHTML = 'Unarchive';
+    }
+
+    archive_btn.onclick = () => {
+      archive(email);
+    }
+    
+    // // Probably optional, make the redirect work ;d
+    // // Add the click behaviour for archiving
+    // archive_btn.onclick = () => {
+    //   if (archive_btn.innerHTML === 'Archive') {
+    //     archive_btn.innerHTML = 'Unarchive';
+    //   } else if (archive_btn.innerHTML === 'Unarchive') {
+    //     archive_btn.innerHTML = 'Archive';
+    //   }
+    //   archive(email);
+    // }
+
+    // Change the read property to true
+    if (email.read == false) {
+      fetch(`/emails/${email.id}`, {
+        method: 'PUT',
+        body: JSON.stringify({
+          read: true,
+        })
+      });
+    }
+  } else {
+    // Hide the archive button
+    archive_btn.style.display = 'none';
+  }
 
   document.querySelector('#email-body').innerHTML = email.body;
 }
@@ -148,15 +168,18 @@ function reply(email) {
 
 }
 
-// Wierd Error where every previous put metho is requested again again
-
 // Archive button
-function archive(email, value=true) {
+function archive(email) {
   const options = {
     method: 'PUT',
     body: JSON.stringify({
-      archived: value
+      archived: !email.archived
     })
   };
   fetch(`/emails/${email.id}`, options);
+  
+  // setTimeout is used because fetch's response comes with a delay and 
+  // the  mail doesn't get moved to the appropriate mailbox in time
+  setTimeout(load_mailbox, 100, 'inbox');
+  // load_mailbox('inbox');
 }
