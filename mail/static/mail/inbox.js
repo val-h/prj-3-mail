@@ -113,7 +113,7 @@ function send_email() {
   }
 }
 
-// Not my own function, mistake of mine is to not have delved in regex :<
+// Not my own re checker, should have learned regex :<
 // Taken from here https://stackoverflow.com/questions/46155/how-to-validate-an-email-address-in-javascript
 function validateEmail(email_arr) {
   const re = /^(([^<>()[\]\\.,;:\s@"]+(\.[^<>()[\]\\.,;:\s@"]+)*)|(".+"))@((\[[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}\])|(([a-zA-Z\-0-9]+\.)+[a-zA-Z]{2,}))$/;
@@ -256,7 +256,4 @@ function archive(email) {
   // setTimeout is used because fetch's response comes with a delay and 
   // the mail doesn't get moved to the appropriate mailbox in time
   setTimeout(load_mailbox, 100, 'inbox');
-  // load_mailbox('inbox');
 }
-
-// TODO - finish
