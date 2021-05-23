@@ -8,9 +8,10 @@ textarea {
 
 .mail {
     display: flex;
-    justify-content: space-around;
+    justify-content: space-between;
     width: 100%;
     line-height: 32px;
+    max-height: 32px;
     border-left: 1px solid black;
     border-bottom: 1px solid black;
     border-radius: 3px;
@@ -34,4 +35,8 @@ textarea {
     padding-left: 4px;
     /* margin-left: 5%; */
     color: black;
+}
+
+.email-label {
+    font-weight: 700;
 }

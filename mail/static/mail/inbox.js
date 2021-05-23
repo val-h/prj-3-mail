@@ -1,3 +1,5 @@
+// DISCLAMER: just now i noticed that i don't stick to the camelCase convention
+// sorry if that makes any trouble ;<
 document.addEventListener('DOMContentLoaded', function () {
 
   // Use buttons to toggle between views
@@ -6,6 +8,7 @@ document.addEventListener('DOMContentLoaded', function () {
   document.querySelector('#archived').addEventListener('click', () => load_mailbox('archive'));
   document.querySelector('#compose').addEventListener('click', compose_email);
 
+  check_fields()
   document.querySelector('#compose-form').addEventListener('submit', () => send_email());
 
   // By default, load the inbox
@@ -39,8 +42,6 @@ function load_mailbox(mailbox) {
   fetch(`/emails/${mailbox}`)
     .then(response => response.json())
     .then(emails => {
-      console.log(emails);
-
       emails_view = document.querySelector('#emails-view');
       for (i = 0; i < emails.length; i++) {
         const crnt_email = emails[i]
@@ -73,54 +74,122 @@ function load_mailbox(mailbox) {
         emails_view.appendChild(mail_container);
       }
     });
+
+  // Display any messages in the local storage
+    document.querySelector('#form-message').innerHTML = localStorage.getItem('message');
+    localStorage.setItem('message', '');
 }
 
 // Send email
 function send_email() {
-  fetch('/emails', {
-    method: 'POST',
-    body: JSON.stringify({
-      recipients: document.querySelector('#compose-recipients').value,
-      subject: document.querySelector('#compose-subject').value,
-      body: document.querySelector('#compose-body').value,
-    })
-  })
-    .then(response => response.json())
-    .then(result => {
-      console.log(result);
-    })
-    .catch(e => {
-      console.log(e);
-    });
+  // Store the email data
+  const recipients = document.querySelector('#compose-recipients').value;
+  const subject = document.querySelector('#compose-subject').value;
+  const body = document.querySelector('#compose-body').value;
 
-  // it starts to load the sent mailbox and then recieves the js file
-  // a new and loads again its contents -> setting inbox by default
-  console.log('loading sent mailbox...');
-  load_mailbox('sent');
-  console.log('sent mailbox...');
+  // for some reason both ',' and ', ' work :D
+  if (validateEmail(recipients.split(', ')) === true) {
+    // Request to the API
+    fetch('/emails', {
+      method: 'POST',
+      body: JSON.stringify({
+        recipients: recipients,
+        subject: subject,
+        body: body
+      })
+    })
+      .then(response => response.json())
+      .then(result => {
+        // console.log(result);
+
+        // Redirect
+        load_mailbox('sent');
+      })
+      .catch(e => {
+        console.log(e);
+      });
+  } else {
+    localStorage.setItem('message', 'Invalid Email.')
+  }
+}
+
+// Not my own function, mistake of mine is to not have delved in regex :<
+// Taken from here https://stackoverflow.com/questions/46155/how-to-validate-an-email-address-in-javascript
+function validateEmail(email_arr) {
+  const re = /^(([^<>()[\]\\.,;:\s@"]+(\.[^<>()[\]\\.,;:\s@"]+)*)|(".+"))@((\[[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}\])|(([a-zA-Z\-0-9]+\.)+[a-zA-Z]{2,}))$/;
+  for (i=0; i< email_arr.length; i++) {
+    if (re.test(String(email_arr[i].toLowerCase())) === false) {
+      return false;
+    }
+  }
+  return true;
+}
+
+// Checks the recipient and subject fields -> must not be empty
+function check_fields() {
+  // Query for the fields
+  const recipients = document.querySelector('#compose-recipients');
+  const subject = document.querySelector('#compose-subject');
+
+  // Disable the submit button if the fields are not prefilled
+  if (recipients.value !== '' && subject.value !== '') {
+    document.querySelector('#btn-submit').disabled = false;
+  }
+  
+  // Not the most elegant solution
+  // recipient and subject flags to togle the submit button
+  let r_flag = false;
+  let s_flag = false;
+  
+  // Check email and subject
+  recipients.onkeyup = () => {
+    if (recipients.value !== '') {
+      r_flag = true;
+    } else {
+      r_flag = false;
+    }
+    check_flags()
+  }
+  subject.onkeyup = () => {
+    if (subject.value !== '') {
+      s_flag = true;
+    } else {
+      s_flag = false;
+    }
+    check_flags()
+  }
+
+  function check_flags() {
+    if (r_flag === true && s_flag === true) {
+      document.querySelector('#btn-submit').disabled = false;
+    } else {
+      document.querySelector('#btn-submit').disabled = true;
+    }
+  }
 }
 
 // Single email detailed view
 function detail_view(email, mailbox) {
-  console.log('Email', email);
   document.querySelector('#emails-view').style.display = 'none';
   document.querySelector('#detail-view').style.display = 'block';
   document.querySelector('#compose-view').style.display = 'none';
 
   //  Set the fields
   document.querySelector('#email-from').innerHTML = email.sender;
-  // Returns an Array
   document.querySelector('#email-to').innerHTML = email.recipients;
   document.querySelector('#email-subject').innerHTML = email.subject;
   document.querySelector('#email-timestamp').innerHTML = email.timestamp;
 
-  // Buttons
-  document.querySelector('#reply').addEventListener('click', () => reply(email));
+  const reply_btn = document.querySelector('#reply');
+  reply_btn.removeEventListener('click', reply);
   const archive_btn = document.querySelector('#archive');
-
-  console.log(mailbox);
+  
   // Check if the request is from 'sent' mailbox
   if (mailbox !== 'sent') {
+    // Reply button
+    reply_btn.style.display = 'inline';
+    reply_btn.addEventListener('click', () => reply(email));
+
     // Display the archive button
     archive_btn.style.display = 'inline';
     
@@ -130,22 +199,12 @@ function detail_view(email, mailbox) {
     } else {
       archive_btn.innerHTML = 'Unarchive';
     }
-
+    
+    // The actual call to archive/unarchive an email
     archive_btn.onclick = () => {
       archive(email);
     }
     
-    // // Probably optional, make the redirect work ;d
-    // // Add the click behaviour for archiving
-    // archive_btn.onclick = () => {
-    //   if (archive_btn.innerHTML === 'Archive') {
-    //     archive_btn.innerHTML = 'Unarchive';
-    //   } else if (archive_btn.innerHTML === 'Unarchive') {
-    //     archive_btn.innerHTML = 'Archive';
-    //   }
-    //   archive(email);
-    // }
-
     // Change the read property to true
     if (email.read == false) {
       fetch(`/emails/${email.id}`, {
@@ -156,8 +215,9 @@ function detail_view(email, mailbox) {
       });
     }
   } else {
-    // Hide the archive button
+    // Hide the buttons
     archive_btn.style.display = 'none';
+    document.querySelector('#reply').style.display = 'none';
   }
 
   document.querySelector('#email-body').innerHTML = email.body;
@@ -165,7 +225,22 @@ function detail_view(email, mailbox) {
 
 // Reply button
 function reply(email) {
+  document.querySelector('#emails-view').style.display = 'none';
+  document.querySelector('#detail-view').style.display = 'none';
+  document.querySelector('#compose-view').style.display = 'block';
 
+  const recipients = document.querySelector('#compose-recipients');
+  const subject = document.querySelector('#compose-subject');
+  const body = document.querySelector('#compose-body');
+
+  // Prefilling the form
+  recipients.value = email.sender;
+  if (email.subject.slice(0,4) === 'Re: ') {
+    subject.value = email.subject;
+  } else {
+    subject.value = 'Re: ' + email.subject;
+  }
+  body.value = '\n\n' + `On ${email.timestamp} ${email.sender} wrote:\n` + email.body;
 }
 
 // Archive button
@@ -177,9 +252,11 @@ function archive(email) {
     })
   };
   fetch(`/emails/${email.id}`, options);
-  
+
   // setTimeout is used because fetch's response comes with a delay and 
-  // the  mail doesn't get moved to the appropriate mailbox in time
+  // the mail doesn't get moved to the appropriate mailbox in time
   setTimeout(load_mailbox, 100, 'inbox');
   // load_mailbox('inbox');
 }
+
+// TODO - finish
